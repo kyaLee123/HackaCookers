@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 import time
+
 class TikTokWebdriverInstance: # _ indicates internal use
     def __init__(self):
         # Prepare driver options
@@ -18,7 +19,6 @@ class TikTokWebdriverInstance: # _ indicates internal use
     def openTiktok(self):
         tiktok_link = 'https://www.tiktok.com/en/'
         self.driver.get(tiktok_link)
-        print(f"Opened: {tiktok_link}")
         
     def promptLogin(self):
         print("(Remember to right press & click 'view video details' after logging in).")
@@ -48,28 +48,6 @@ class TikTokWebdriverInstance: # _ indicates internal use
                 continue
                 
         raise Exception("No visible element found in viewport")
-    
-    def _rightClickActiveVideo(self):
-        try:
-            # get the media card
-            active_video_card = self._get_visible_element("[id^='media-card']")
-            
-            # right click it
-            action = ActionChains(self.driver)
-            action.context_click(active_video_card).perform()
-            
-            print(f"Right-clicked video ID: {active_video_card.get_attribute('id')}")
-            
-        except Exception as e:
-            print(f"FAILED: Could not right-click active video.\nError: {e}")
-            
-    def _pressEsc(self):
-        try:
-            # Send ESCAPE to the main body of the page
-            self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
-            print("Sent ESCAPE key to dismiss menu.")
-        except Exception as e:
-            print(f"Could not dismiss menu: {e}")
 
     def _promptAction(self, action_description):
         # Prompt user to log in

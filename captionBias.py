@@ -5,10 +5,19 @@ import shutil
 import re
 import numpy as np
 import fasttext
+import ssl
+
+# Safe import for secure contexts (like MacOS)
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 import nltk
+nltk.download('stopwords')
+
 from nltk.corpus import stopwords
-
-
 
 # ----------------------------
 # Class mirroring the "Concept" format
@@ -25,7 +34,7 @@ class Relatedness:
     """
 
     # Path to your fastText model
-    MODEL_PATH = r"models\cc.en.300.bin"
+    MODEL_PATH = r'/Users/anderscurrah/Desktop/Random Coding Stuffs/Hackathons/HackaCookers/models/cc.en.300.bin'
 
     # fastText model + stopwords (loaded once)
     model = None
