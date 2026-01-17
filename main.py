@@ -11,9 +11,6 @@ from tiktok_webdriver import tiktokWebdriver
 # Set to False if you want to test w/o logging in
 run_full_model = False
 
-s = scraper.Scraper()
-c = Relatedness("dance")
-
 def genericRunner():
     i = 0
     while True:
@@ -93,6 +90,10 @@ def updateGraph(i, score, liked):
     fig.canvas.draw()
     fig.canvas.flush_events()
 
+# Initialize scraper and concept
+s = scraper.Scraper()
+c = Relatedness(input("Enter concept word: "))
+
 # Matplotlib stuff
 plt.ion()
 fig, ax = plt.subplots()
@@ -122,5 +123,6 @@ webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 # open webdriver
 webdriver.openTiktok()
 webdriver.promptLogin()
+
 
 genericRunner()
