@@ -5,7 +5,7 @@ from helper import scraper
 from helper import bias
 
 s = scraper.Scraper()
-c = bias.Concept("dance")
+c = bias.Concept("dog")
 
 webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 
@@ -15,16 +15,19 @@ webdriver.promptLogin()
 time.sleep(1)
 
 while True:
-    url = webdriver.getUrl()
+    print("getting url...")
     try:
+        url = webdriver.getUrl()
         s.getInfo(url, False)
+        print(f"Succeed! {url}")
     except Exception:
+        print("Failed!")
         s.description = "bob"
 
     score = c.biasScore(s.description)
 
     if (c.biasScore(s.description) > 0.5):
-        time.sleep(10)
+        time.sleep(20)
         print("Like")
     else:
         print("Ignore")

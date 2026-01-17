@@ -108,7 +108,7 @@ class TikTokWebdriverInstance:
     
     def getUrl(self):
         self._rightClickActiveVideo()
-        time.sleep(0.1)  # wait for context menu to appear
+        time.sleep(1)  # wait for context menu to appear
         link_element = self.driver.find_element(By.CSS_SELECTOR, "a[href*='is_from_webapp=1']")
         full_url = link_element.get_attribute("href")
         clean_url = full_url.split('?')[0]
