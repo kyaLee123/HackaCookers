@@ -1,10 +1,25 @@
 import time
 import matplotlib.pyplot as plt
 import statistics
+import csv
+from datetime import datetime
 
 from helper import scraper
 from captionBias import Relatedness
 from tiktok_webdriver import tiktokWebdriver
+
+def saveData(scores, likes, filename="bias_data.csv"):
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["index", "score", "liked"])
+        for i, s in enumerate(scores):
+            writer.writerow([i, s, likes[i] is not None])
+
+def saveImg(fig, filename="bias_plot.png"):
+    fig.savefig(filename, dpi=200, bbox_inches="tight")
+
+def ts(name, ext):
+    return f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
 
 # Matplotlib stuff
 plt.ion()
@@ -23,6 +38,7 @@ ax.set_title("TikTok Bias Over Time")
 ax.legend()
 
 WINDOW = 15   # how many recent videos to smooth over
+SAVE_EVERY = 10 # How many videos to pass to save the data
 
 median_line, = ax.plot([], [], linestyle="--", label="Rolling Median")
 ax.legend()
@@ -39,6 +55,14 @@ time.sleep(1)
 
 i = 0
 while True:
+    # Save the data
+    if len(scores) % SAVE_EVERY == 0:
+        data_file = ts("bias_data", "csv")
+        plot_file = ts("bias_plot", "png")
+        saveData(scores, likes, data_file)
+        saveImg(fig, plot_file)
+        print(f"Saved -> {data_file}, {plot_file}")
+
     print("getting url...")
     try:
         url = webdriver.getUrl()
