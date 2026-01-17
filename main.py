@@ -42,7 +42,7 @@ webdriver.openTiktok()
 webdriver.promptLogin()
 time.sleep(1)
 
-likes = 0
+i = 0
 while True:
     # Save the data
     if len(scores) % SAVE_EVERY == 0:
@@ -62,7 +62,7 @@ while True:
     liked = score > 0.5
     if liked:
         time.sleep(30)
-        likes += 1
+        i += 1
         print("Liking Video")
     else:
         print("Ignoring Video")

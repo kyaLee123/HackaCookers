@@ -63,7 +63,7 @@ class Scraper:
         full_audio = base + ".mp3"
         short_audio = base + "_short.mp3"
 
-        #self._trimAudio(full_audio, short_audio, seconds)
+        self._trimAudio(full_audio, short_audio, seconds)
 
         model = whisper.load_model("base")
         result = model.transcribe(short_audio)
@@ -74,15 +74,12 @@ class Scraper:
         self.transcript = result["text"]
         return result["text"]
     
-    def _trimAudio(self, input_path, output_path, seconds=20):
+    def _trimAudio(self, inp, out, seconds):
         subprocess.run([
-            "ffmpeg",
-            "-y",
-            "-i", input_path,
+            "ffmpeg", "-y",
+            "-i", inp,
             "-t", str(seconds),
-            "-ar", "16000",
-            "-ac", "1",
-            output_path
+            out
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # This function prints the data associated with the given TikTok video
