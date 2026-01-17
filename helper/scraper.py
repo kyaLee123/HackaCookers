@@ -3,6 +3,7 @@ import re
 import warnings
 import whisper
 import os
+import subprocess
 
 # Cancel the warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -43,7 +44,7 @@ class Scraper:
         return self.title, self.description, self.channel, self.transcript
     
     # Gets a given TikTok video's transcript
-    def getTranscript(self, url):
+    def getTranscript(self, url, seconds=20):
         base = "tiktok_audio"
 
         ydlOpts = {
@@ -59,17 +60,29 @@ class Scraper:
         with yt_dlp.YoutubeDL(ydlOpts) as ydl:
             ydl.download([url])
 
-        audioFile = base + ".mp3"
+        full_audio = base + ".mp3"
+        short_audio = base + "_short.mp3"
+
+        self.trimAudio(full_audio, short_audio, seconds)
 
         model = whisper.load_model("base")
-        result = model.transcribe(audioFile)
+        result = model.transcribe(short_audio)
 
-        os.remove(audioFile)
+        os.remove(full_audio)
+        os.remove(short_audio)
 
-        # Save the transcript
         self.transcript = result["text"]
-
         return result["text"]
+    
+    def _trimAudio(input_path, output_path, seconds=20):
+        subprocess.run([
+            "ffmpeg",
+            "-y",
+            "-i", input_path,
+            "-t", str(seconds),   # duration
+            "-acodec", "copy",
+            output_path
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # This function prints the data associated with the given TikTok video
     def print(self):
