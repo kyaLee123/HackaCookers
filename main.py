@@ -2,6 +2,7 @@ import time
 import matplotlib.pyplot as plt
 import statistics
 import csv
+import math
 
 from helper import scraper
 from captionBias import Relatedness
@@ -79,25 +80,60 @@ def genericRunner():
             interactFullModel(i, score)
         else:
             interactAsTest(i, score)
+            
+        # pause to allow time to scroll/load
+        time.sleep(2)
 
 def interactAsTest(i, score):
     # -- DECISION MAKING ----
     liked = score > 0.5
     if liked:
-        time.sleep(20)
+        watch_time_value = value_to_watchtime(score, 0.3, 1.5, 30.0)
+        print(f"Watching for {watch_time_value} seconds...")
+        time.sleep(watch_time_value)
         i += 1
-        print("Liking Video")
     else:
         print("Ignoring Video")
         
     # ----- GRAPH UPDATE -----
     updateGraph(i, score, liked)
     
-    
-    time.sleep(1)
     webdriver.scroll()
-    # pause for dramatic effect
-    time.sleep(2)
+    
+def value_to_watchtime(bias_value: float, threshold: float, steepness: float, max_waittime: float) -> float:
+    """
+    Maps an input value (within [threshold, 1.0]) to an output [0, max_waittime] 
+    using an exponential curve.
+    
+    Args:
+        value: The input value to map.
+        threshold: The lower bound of the input range. 
+                   Values below this return 0.
+        steepness: Controls curvature. 
+                   > 0 is convex (starts slow), < 0 is concave (starts fast).
+        max_value: The maximum output value when input is 1.0.
+    """
+    # Safety check to avoid division by zero if threshold is 1.0
+    if threshold >= 1.0:
+        return 0.0 if bias_value < 1.0 else max_waittime
+
+    # Clamp the input so it doesn't go outside [threshold, 1.0]
+    #    This ensures we don't get negative outputs or overshoot max_value.
+    clamped_value = max(threshold, min(1.0, bias_value))
+
+    # Normalize the input to a 0.0 - 1.0 range (t)
+    #    Example: If threshold is 0.5 and input is 0.75, t becomes 0.5.
+    t = (clamped_value - threshold) / (1.0 - threshold)
+
+    # Handle linear case (steepness approx 0)
+    if abs(steepness) < 1e-6:
+        return t * max_waittime
+
+    # Apply the exponential formula
+    #    f(t) = (e^(k*t) - 1) / (e^k - 1)
+    curve = (math.exp(steepness * t) - 1) / (math.exp(steepness) - 1)
+
+    return curve * max_waittime
 
 def interactFullModel():
     return 0
