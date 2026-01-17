@@ -28,7 +28,7 @@ median_line, = ax.plot([], [], linestyle="--", label="Rolling Median")
 ax.legend()
 
 s = scraper.Scraper()
-c = Relatedness("dance")
+c = Relatedness("republican")
 
 webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 
@@ -42,16 +42,16 @@ while True:
     print("getting url...")
     try:
         url = webdriver.getUrl()
-        s.getInfo(url, False)
+        s.getInfo(url, True)
         print(f"Succeed! {url}")
     except Exception:
         print("Fail!")
         s.description = "bob"
-    score = c.biasScore(s.description)
+    score = c.biasScore(f"{s.title} {s.description} {s.transcript}")
     print(f"score: {score}")
     liked = score > 0.5
     if liked:
-        time.sleep(20)
+        time.sleep(30)
         i += 1
         print("Liking Video")
     else:

@@ -79,8 +79,9 @@ class Scraper:
             "ffmpeg",
             "-y",
             "-i", input_path,
-            "-t", str(seconds),   # duration
-            "-acodec", "copy",
+            "-t", str(seconds),
+            "-ar", "16000",
+            "-ac", "1",
             output_path
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
