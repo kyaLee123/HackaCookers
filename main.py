@@ -14,7 +14,7 @@ run_full_model = False
 s = scraper.Scraper()
 c = Relatedness("dance")
 
-def testRunner():
+def genericRunner():
     i = 0
     while True:
         # Save the data
@@ -23,6 +23,7 @@ def testRunner():
             print(f"Saved Data!")
         print("getting url...")
         
+        # get url and scrape
         try:
             url = webdriver.getUrl()
             s.getInfo(url, False)
@@ -30,26 +31,38 @@ def testRunner():
         except Exception:
             print("Fail!")
             s.description = "bob"
+        
+        # --- BIAS SCORING ----
         score = c.biasScore(s.description)
         print(f"score: {score}")
-        liked = score > 0.5
-        if liked:
-            time.sleep(20)
-            i += 1
-            print("Liking Video")
+        
+        # -- DECISION MAKING ----
+        # run relevant decision function
+        if run_full_model:
+            interactFullModel(i, score)
         else:
-            print("Ignoring Video")
-            
-        # ----- GRAPH UPDATE -----
-        updateGraph(i, score, liked)
-        
-        
-        time.sleep(1)
-        webdriver.scroll()
-        # pause for dramatic effect
-        time.sleep(2)
+            interactAsTest(i, score)
 
-def fullModelRunner():
+def interactAsTest(i, score):
+    # -- DECISION MAKING ----
+    liked = score > 0.5
+    if liked:
+        time.sleep(20)
+        i += 1
+        print("Liking Video")
+    else:
+        print("Ignoring Video")
+        
+    # ----- GRAPH UPDATE -----
+    updateGraph(i, score, liked)
+    
+    
+    time.sleep(1)
+    webdriver.scroll()
+    # pause for dramatic effect
+    time.sleep(2)
+
+def interactFullModel():
     return 0
 
 def saveImg(fig, filename="bias_plot.png"):
@@ -110,8 +123,4 @@ webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 webdriver.openTiktok()
 webdriver.promptLogin()
 
-# run relevant model
-if run_full_model:
-    fullModelRunner()
-else:
-    testRunner()
+genericRunner()
