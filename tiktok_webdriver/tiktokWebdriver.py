@@ -206,3 +206,45 @@ class TikTokWebdriverInstance: # _ indicates internal use
         # Close the browser window
         print("Closing window.")
         self.driver.quit()
+
+    def capture_screenshot(self, filename="screenshot.jpg"):
+        """
+        Captures a screenshot of the video element if possible, or the whole page.
+        """
+        try:
+            # Try to find the active video element to crop to it
+            active_container = self._get_active_element("[data-e2e='recommend-list-item-container']")
+            # The video element is usually a <video> tag inside the container
+            video_element = active_container.find_element(By.TAG_NAME, "video")
+            
+            video_element.screenshot(filename)
+            print(f"Video element screenshot saved to {filename}")
+            return True
+        except Exception as e:
+            print(f"Failed to capture video element screenshot: {e}")
+            try:
+                # Fallback to full page
+                self.driver.save_screenshot(filename)
+                print(f"Full page screenshot saved to {filename} (fallback)")
+                return True
+            except Exception as e2:
+                print(f"Failed to capture fallback screenshot: {e2}")
+                return False
+
+    def getVideoDescription(self):
+        """
+        Extracts the description from the active video container.
+        """
+        try:
+            active_container = self._get_active_element("[data-e2e='recommend-list-item-container']")
+            # Selector for description might vary, try common ones
+            # data-e2e="video-desc" is standard
+            try:
+                desc_element = active_container.find_element(By.CSS_SELECTOR, "[data-e2e='video-desc']")
+                return desc_element.text
+            except:
+                # Fallback or empty
+                return ""
+        except Exception as e:
+            print(f"Failed to get description: {e}")
+            return ""
