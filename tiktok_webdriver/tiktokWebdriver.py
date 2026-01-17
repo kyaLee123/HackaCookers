@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 import time
-class TikTokWebdriverInstance:
+class TikTokWebdriverInstance: # _ indicates internal use
     def __init__(self):
         # Prepare driver options
         chrome_options = Options()
@@ -19,6 +19,10 @@ class TikTokWebdriverInstance:
         tiktok_link = 'https://www.tiktok.com/en/'
         self.driver.get(tiktok_link)
         print(f"Opened: {tiktok_link}")
+        
+    def promptLogin(self):
+        print("(Remember to right press & click 'view video details' after logging in).")
+        self._promptAction("logging in to tiktok")
         
     def _get_visible_element(self, css_selector):
         """
@@ -81,10 +85,6 @@ class TikTokWebdriverInstance:
             time.sleep(1)
         print(f"Beginning interaction...")
         
-    def promptLogin(self):
-        print("(Remember to right press & click 'view video details' after logging in).")
-        self._promptAction("logging in to tiktok")
-        
     def _promptCaptcha(self):
         self._promptAction("completing captcha")
             
@@ -97,23 +97,100 @@ class TikTokWebdriverInstance:
     def _checkForCapcha(self):
         if self._checkElementExists("captcha-verify-container-main-page"):
             self._promptCaptcha()
-            
-    def getAddressBarUrl(self):
-        # Get the full URL from the browser
-        full_url = self.driver.current_url
-        # remove unnecessary junk
-        clean_url = full_url.split('?')[0]
+    
+    def _get_active_element(self, css_selector):
+        """
+        Calculates which element is closest to the center of the user's screen.
+        Essential for infinite scroll feeds where multiple items exist in the DOM.
+        """
+        # 1. Get current Viewport geometry
+        viewport_height = self.driver.execute_script("return window.innerHeight")
+        scroll_y = self.driver.execute_script("return window.scrollY")
+        center_y = viewport_height / 2
         
-        return clean_url
+        # 2. Find ALL matches in the DOM
+        elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+        
+        best_element = None
+        min_distance = float('inf') # Start with infinity
+
+        for element in elements:
+            try:
+                # 3. Calculate position relative to the VIEWPORT, not the document
+                # element.location['y'] = Position in total document
+                # scroll_y = How much we have scrolled down
+                relative_y = element.location['y'] - scroll_y
+                
+                # We find the center of the element to be precise
+                element_center = relative_y + (element.size['height'] / 2)
+                
+                # How far is this element from the center of the screen?
+                distance = abs(center_y - element_center)
+                
+                # If this is the closest one so far, save it
+                if distance < min_distance:
+                    min_distance = distance
+                    best_element = element
+            except:
+                continue
+
+        if best_element:
+            return best_element
+        
+        raise Exception(f"No active element found for selector: {css_selector}")
     
     def getUrl(self):
-        self._rightClickActiveVideo()
-        time.sleep(0.1)  # wait for context menu to appear
-        link_element = self.driver.find_element(By.CSS_SELECTOR, "a[href*='is_from_webapp=1']")
-        full_url = link_element.get_attribute("href")
-        clean_url = full_url.split('?')[0]
-        self._pressEsc()
-        return clean_url
+        try:
+            # 1. Get the Active Container
+            active_container = self._get_active_element("[data-e2e='recommend-list-item-container']")
+
+            # --- EXTRACT VIDEO ID ---
+            # JS: const videoWrapper = activeContainer.querySelector('div[id^="xgwrapper-"]');
+            video_id = None
+            try:
+                video_wrapper = active_container.find_element(By.CSS_SELECTOR, 'div[id^="xgwrapper-"]')
+                
+                # JS: const idParts = videoWrapper.id.split('-');
+                # JS: videoId = idParts[idParts.length - 1];
+                wrapper_id = video_wrapper.get_attribute("id")
+                video_id = wrapper_id.split('-')[-1]
+            except:
+                # Wrapper not found
+                pass 
+
+            # --- EXTRACT AUTHOR ---
+            # JS: const authorLink = activeContainer.querySelector('a[data-e2e="video-author-avatar"]');
+            author = None
+            try:
+                author_link = active_container.find_element(By.CSS_SELECTOR, 'a[data-e2e="video-author-avatar"]')
+                
+                # JS: const href = authorLink.getAttribute('href');
+                # NOTE: We use get_dom_attribute() to get the RAW string ("/@user") 
+                # instead of the full URL ("https://tiktok.com/@user")
+                href = author_link.get_dom_attribute("href")
+                
+                if href:
+                    # JS: author = href.startsWith('/') ? href.substring(1) : href;
+                    # Python equivalent: lstrip('/') removes the leading slash
+                    author = href.lstrip('/') if href.startswith('/') else href
+            except:
+                # Author link not found
+                pass
+
+            # --- CONSTRUCT URL ---
+            # JS: if (videoId && author) { ... }
+            if video_id and author:
+                return f"https://www.tiktok.com/{author}/video/{video_id}"
+            
+            # JS: else if (videoId) { ... }
+            elif video_id:
+                return f"https://www.tiktok.com/video/{video_id}"
+            
+            return None
+
+        except Exception as e:
+            print(f"FAILED: URL construction error: {e}")
+            return None
 
     def pressLikeButton(self):
         self._checkForCapcha()

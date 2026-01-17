@@ -1,0 +1,3 @@
+2026-01-17 12:32:25.937297,https://www.tiktok.com/@anna.tst4/video/7587193544423656734,unknown,Passive,True,0.7497672,watch_partial,False,False,
+2026-01-17 12:32:34.227554,https://www.tiktok.com/@fallontonight/video/7576838857119812895,unknown,Passive,True,0.7497672,watch_partial,False,False,
+timestamp,video_id,author,persona,is_target,bias_score,action,liked,followed,transcript_snippet
