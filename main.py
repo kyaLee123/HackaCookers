@@ -7,8 +7,78 @@ from helper import scraper
 from captionBias import Relatedness
 from tiktok_webdriver import tiktokWebdriver
 
+# Set to True to run the full interaction model (likes, saves)
+# Set to False if you want to test w/o logging in
+run_full_model = False
+
+s = scraper.Scraper()
+c = Relatedness("dance")
+
+def testRunner():
+    i = 0
+    while True:
+        # Save the data
+        if len(scores) % SAVE_EVERY == 0:
+            saveImg(fig)
+            print(f"Saved Data!")
+        print("getting url...")
+        
+        try:
+            url = webdriver.getUrl()
+            s.getInfo(url, False)
+            print(f"Succeed! {url}")
+        except Exception:
+            print("Fail!")
+            s.description = "bob"
+        score = c.biasScore(s.description)
+        print(f"score: {score}")
+        liked = score > 0.5
+        if liked:
+            time.sleep(20)
+            i += 1
+            print("Liking Video")
+        else:
+            print("Ignoring Video")
+            
+        # ----- GRAPH UPDATE -----
+        updateGraph(i, score, liked)
+        
+        
+        time.sleep(1)
+        webdriver.scroll()
+        # pause for dramatic effect
+        time.sleep(2)
+
+def fullModelRunner():
+    return 0
+
 def saveImg(fig, filename="bias_plot.png"):
     fig.savefig(filename, dpi=200, bbox_inches="tight")
+    
+def updateGraph(i, score, liked):
+    global scores, likes
+    
+    scores.append(score)
+    likes.append(i if liked else None)
+    x = list(range(len(scores)))
+    line.set_data(x, scores)
+    
+    # liked points
+    like_x = [j for j, v in enumerate(likes) if v is not None]
+    like_y = [scores[j] for j in like_x]
+    like_line.set_data(like_x, like_y)
+    # rolling median
+    med_x = []
+    med_y = []
+    for j in range(len(scores)):
+        start = max(0, j - WINDOW + 1)
+        window_vals = scores[start:j+1]
+        med_x.append(j)
+        med_y.append(statistics.median(window_vals))
+    median_line.set_data(med_x, med_y)
+    ax.set_xlim(0, len(scores))
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 # Matplotlib stuff
 plt.ion()
@@ -27,68 +97,21 @@ ax.set_title("TikTok Bias Over Time")
 ax.legend()
 
 WINDOW = 15   # how many recent videos to smooth over
-SAVE_EVERY = 10 # How many videos to pass to save the data
 
 median_line, = ax.plot([], [], linestyle="--", label="Rolling Median")
 ax.legend()
 
-s = scraper.Scraper()
-c = Relatedness("republican")
+SAVE_EVERY = 10 # How many videos to pass to save the data
 
+# init webdriver
 webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 
-# open 
+# open webdriver
 webdriver.openTiktok()
 webdriver.promptLogin()
-time.sleep(1)
 
-i = 0
-while True:
-    # Save the data
-    if len(scores) % SAVE_EVERY == 0:
-        saveImg(fig)
-        print(f"Saved Data!")
-
-    print("getting url...")
-    try:
-        url = webdriver.getUrl()
-        s.getInfo(url, True)
-        print(f"Succeed! {url}")
-    except Exception:
-        print("Fail!")
-        s.description = "bob"
-    score = c.biasScore(f"{s.title} {s.description} {s.transcript}")
-    print(f"score: {score}")
-    liked = score > 0.5
-    if liked:
-        time.sleep(30)
-        i += 1
-        print("Liking Video")
-    else:
-        print("Ignoring Video")
-    # ----- GRAPH UPDATE -----
-    scores.append(score)
-    likes.append(i if liked else None)
-    x = list(range(len(scores)))
-    line.set_data(x, scores)
-    # liked points
-    like_x = [j for j, v in enumerate(likes) if v is not None]
-    like_y = [scores[j] for j in like_x]
-    like_line.set_data(like_x, like_y)
-    # rolling median
-    med_x = []
-    med_y = []
-    for j in range(len(scores)):
-        start = max(0, j - WINDOW + 1)
-        window_vals = scores[start:j+1]
-        med_x.append(j)
-        med_y.append(statistics.median(window_vals))
-    median_line.set_data(med_x, med_y)
-    ax.set_xlim(0, len(scores))
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    # -------------------------
-    time.sleep(1)
-    webdriver.scroll()
-    # pause for dramatic effect
-    time.sleep(2)
+# run relevant model
+if run_full_model:
+    fullModelRunner()
+else:
+    testRunner()
