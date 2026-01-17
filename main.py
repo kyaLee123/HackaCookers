@@ -6,18 +6,26 @@ import csv
 from helper import scraper
 from captionBias import Relatedness
 from tiktok_webdriver import tiktokWebdriver
+from clip_classifier import ClipClassifier
 
 # Set to True to run the full interaction model (likes, saves)
 # Set to False if you want to test w/o logging in
 run_full_model = False
 
 def genericRunner():
+    # Initialize CLIP Classifier
+    print("Initializing CLIP Classifier...")
+    classifier = ClipClassifier()
+    
     i = 0
     while True:
         # Save the data
         if len(scores) % SAVE_EVERY == 0:
             saveImg(fig)
             print(f"Saved Data!")
+        
+
+
         print("getting url...")
         
         # get url and scrape
@@ -32,6 +40,38 @@ def genericRunner():
         # --- BIAS SCORING ----
         score = c.biasScore(s.description)
         print(f"score: {score}")
+
+        # --- VISUAL CLASSIFICATION ---
+        # 1. Capture Screenshot
+        screenshot_path = "temp_screenshot.jpg"
+        if webdriver.capture_screenshot(screenshot_path):
+            # 2. Classify
+            labels = [c.word, "irrelevant"] # Concept vs Irrelevant
+            result = classifier.classify(screenshot_path, labels)
+            
+            if result:
+                top_label = result["top_label"]
+                # Visual score is the probability of the concept label
+                # We map back from the label string to the score in result["all_scores"]
+                score_visual = result["all_scores"].get(labels[0], 0.0)
+                print(f"Visual Classification: {top_label} (Score: {score_visual:.3f})")
+            else:
+                print("Visual classification failed.")
+                score_visual = 0.0
+        else:
+            print("Screenshot failed, skipping visual classification.")
+            score_visual = 0.0
+
+        # --- COMBINE SCORES ---
+        # Formula: (Text Score + Visual Score) / 2
+        # If one is 0, it drags the other down, which is good for safety? 
+        # Or should we only average non-zeroes? 
+        # User agreed to simple average.
+        print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
+        score = (score + score_visual) / 2
+        print(f"Combined Score: {score:.3f}")
+
+
         
         # -- DECISION MAKING ----
         # run relevant decision function
