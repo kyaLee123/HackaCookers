@@ -70,6 +70,12 @@ def genericRunner():
         # User agreed to simple average.
         print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
         score = (score + score_visual) / 2
+        
+        # Override: If visual score is very high, trust it regardless of text
+        if score_visual >= 0.8:
+            print("Visual Score >= 0.8! Overriding to ensure watch.")
+            score = max(score, score_visual)
+            
         print(f"Combined Score: {score:.3f}")
 
 
