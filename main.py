@@ -42,7 +42,7 @@ while True:
     print("getting url...")
     try:
         url = webdriver.getUrl()
-        s.getInfo(url, True)
+        s.getInfo(url, False)
         print(f"Succeed! {url}")
     except Exception:
         print("Fail!")

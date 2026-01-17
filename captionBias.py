@@ -34,7 +34,7 @@ class Relatedness:
     """
 
     # Path to your fastText model
-    MODEL_PATH = r'"C:\Users\grube\Desktop\HackaCookers\cc.en.300.bin"'
+    MODEL_PATH = r'C:\Users\grube\Desktop\HackaCookers\cc.en.300.bin'
 
     # fastText model + stopwords (loaded once)
     model = None

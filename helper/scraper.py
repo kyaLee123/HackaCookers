@@ -63,7 +63,7 @@ class Scraper:
         full_audio = base + ".mp3"
         short_audio = base + "_short.mp3"
 
-        self.trimAudio(full_audio, short_audio, seconds)
+        self._trimAudio(full_audio, short_audio, seconds)
 
         model = whisper.load_model("base")
         result = model.transcribe(short_audio)
@@ -74,7 +74,7 @@ class Scraper:
         self.transcript = result["text"]
         return result["text"]
     
-    def _trimAudio(input_path, output_path, seconds=20):
+    def _trimAudio(self, input_path, output_path, seconds=20):
         subprocess.run([
             "ffmpeg",
             "-y",
