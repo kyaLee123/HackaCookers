@@ -40,7 +40,7 @@ class Scraper:
         if includeTranscript:
             self.getTranscript(url)
 
-        return self.title, self.description, self.channel, self.description
+        return self.title, self.description, self.channel, self.transcript
     
     # Gets a given TikTok video's transcript
     def getTranscript(self, url):
@@ -73,7 +73,13 @@ class Scraper:
     
     # This function prints the data associated with the given TikTok video
     def print(self):
-        print(f"Title: {self.title}")
-        print(f"Description: {self.description}")
-        print(f"Channel: {self.channel}")
-        print(f"Transcript: {self.transcript}")
+        def safe_print(label, value):
+            try:
+                print(f"{label}: {value}")
+            except UnicodeEncodeError:
+                print(f"{label}: {value.encode('ascii', 'replace').decode('ascii')}")
+
+        safe_print("Title", self.title)
+        safe_print("Description", self.description)
+        safe_print("Channel", self.channel)
+        safe_print("Transcript", self.transcript)
