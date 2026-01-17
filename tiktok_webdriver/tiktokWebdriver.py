@@ -58,6 +58,14 @@ class TikTokWebdriverInstance:
             
         except Exception as e:
             print(f"FAILED: Could not right-click active video.\nError: {e}")
+            
+    def _pressEsc(self):
+        try:
+            # Send ESCAPE to the main body of the page
+            self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+            print("Sent ESCAPE key to dismiss menu.")
+        except Exception as e:
+            print(f"Could not dismiss menu: {e}")
 
     def _promptAction(self, action_description):
         # Prompt user to log in
@@ -90,12 +98,21 @@ class TikTokWebdriverInstance:
         if self._checkElementExists("captcha-verify-container-main-page"):
             self._promptCaptcha()
             
-    def getUrl(self):
+    def getAddressBarUrl(self):
         # Get the full URL from the browser
         full_url = self.driver.current_url
         # remove unnecessary junk
         clean_url = full_url.split('?')[0]
         
+        return clean_url
+    
+    def getUrl(self):
+        self._rightClickActiveVideo()
+        time.sleep(0.1)  # wait for context menu to appear
+        link_element = self.driver.find_element(By.CSS_SELECTOR, "a[href*='is_from_webapp=1']")
+        full_url = link_element.get_attribute("href")
+        clean_url = full_url.split('?')[0]
+        self._pressEsc()
         return clean_url
 
     def pressLikeButton(self):
