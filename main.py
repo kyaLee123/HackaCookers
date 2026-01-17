@@ -1,11 +1,12 @@
 from tiktok_webdriver import tiktokWebdriver
 import time
+import captionBias   # ← change ONLY this import
+
 
 from helper import scraper
-from helper import bias
 
 s = scraper.Scraper()
-c = bias.Concept("dog")
+c = captionBias.Concept("dance")   # ← SAME call as before
 
 webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 
