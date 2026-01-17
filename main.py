@@ -2,24 +2,13 @@ import time
 import matplotlib.pyplot as plt
 import statistics
 import csv
-from datetime import datetime
 
 from helper import scraper
 from captionBias import Relatedness
 from tiktok_webdriver import tiktokWebdriver
 
-def saveData(scores, likes, filename="bias_data.csv"):
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["index", "score", "liked"])
-        for i, s in enumerate(scores):
-            writer.writerow([i, s, likes[i] is not None])
-
 def saveImg(fig, filename="bias_plot.png"):
     fig.savefig(filename, dpi=200, bbox_inches="tight")
-
-def ts(name, ext):
-    return f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
 
 # Matplotlib stuff
 plt.ion()
@@ -53,15 +42,12 @@ webdriver.openTiktok()
 webdriver.promptLogin()
 time.sleep(1)
 
-i = 0
+likes = 0
 while True:
     # Save the data
     if len(scores) % SAVE_EVERY == 0:
-        data_file = ts("bias_data", "csv")
-        plot_file = ts("bias_plot", "png")
-        saveData(scores, likes, data_file)
-        saveImg(fig, plot_file)
-        print(f"Saved -> {data_file}, {plot_file}")
+        saveImg(fig)
+        print(f"Saved Data!")
 
     print("getting url...")
     try:
@@ -76,7 +62,7 @@ while True:
     liked = score > 0.5
     if liked:
         time.sleep(30)
-        i += 1
+        likes += 1
         print("Liking Video")
     else:
         print("Ignoring Video")
