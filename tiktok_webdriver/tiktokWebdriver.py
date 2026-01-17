@@ -140,13 +140,57 @@ class TikTokWebdriverInstance: # _ indicates internal use
         raise Exception(f"No active element found for selector: {css_selector}")
     
     def getUrl(self):
-        self._rightClickActiveVideo()
-        time.sleep(0.1)  # wait for context menu to appear
-        link_element = self.driver.find_element(By.CSS_SELECTOR, "a[href*='is_from_webapp=1']")
-        full_url = link_element.get_attribute("href")
-        clean_url = full_url.split('?')[0]
-        self._pressEsc()
-        return clean_url
+        try:
+            # 1. Get the Active Container
+            active_container = self._get_active_element("[data-e2e='recommend-list-item-container']")
+
+            # --- EXTRACT VIDEO ID ---
+            # JS: const videoWrapper = activeContainer.querySelector('div[id^="xgwrapper-"]');
+            video_id = None
+            try:
+                video_wrapper = active_container.find_element(By.CSS_SELECTOR, 'div[id^="xgwrapper-"]')
+                
+                # JS: const idParts = videoWrapper.id.split('-');
+                # JS: videoId = idParts[idParts.length - 1];
+                wrapper_id = video_wrapper.get_attribute("id")
+                video_id = wrapper_id.split('-')[-1]
+            except:
+                # Wrapper not found
+                pass 
+
+            # --- EXTRACT AUTHOR ---
+            # JS: const authorLink = activeContainer.querySelector('a[data-e2e="video-author-avatar"]');
+            author = None
+            try:
+                author_link = active_container.find_element(By.CSS_SELECTOR, 'a[data-e2e="video-author-avatar"]')
+                
+                # JS: const href = authorLink.getAttribute('href');
+                # NOTE: We use get_dom_attribute() to get the RAW string ("/@user") 
+                # instead of the full URL ("https://tiktok.com/@user")
+                href = author_link.get_dom_attribute("href")
+                
+                if href:
+                    # JS: author = href.startsWith('/') ? href.substring(1) : href;
+                    # Python equivalent: lstrip('/') removes the leading slash
+                    author = href.lstrip('/') if href.startswith('/') else href
+            except:
+                # Author link not found
+                pass
+
+            # --- CONSTRUCT URL ---
+            # JS: if (videoId && author) { ... }
+            if video_id and author:
+                return f"https://www.tiktok.com/{author}/video/{video_id}"
+            
+            # JS: else if (videoId) { ... }
+            elif video_id:
+                return f"https://www.tiktok.com/video/{video_id}"
+            
+            return None
+
+        except Exception as e:
+            print(f"FAILED: URL construction error: {e}")
+            return None
 
     def pressLikeButton(self):
         self._checkForCapcha()
