@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import statistics
 import csv
 import math
+import io
+import base64
 
 from helper import scraper
 from captionBias import Relatedness
@@ -50,21 +52,14 @@ def genericRunner():
 
         print("getting url...")
         
-        while True:
-            # get url and scrape
-            try:
-                url = webdriver.getUrl()
-                print(f"Succeed! {url}")
-                try:
-                    s.getInfo(url, False)
-                    break
-                except Exception:
-                    print("❌URL scraping error❌")
-                    webdriver.scroll()
-                    time.sleep(2)
-            except Exception:
-                print("❌Fail❌")
-                input("URL grab failed, pause the video then press Enter to try again...")
+        # get url and scrape
+        try:
+            url = webdriver.getUrl()
+            s.getInfo(url, False)
+            print(f"Succeed! {url}")
+        except Exception:
+            print("Fail!")
+            s.description = "bob"
         
         # --- BIAS SCORING ----
         score = c.biasScore(s.description)
@@ -72,10 +67,15 @@ def genericRunner():
 
         # --- COMBINE SCORES ---
         # Formula: ((Text Score * abstractness weight) + (Visual Score * abstractness weight))
-        concrete_weight = [0.4, 0.6] # format: [text weight, visual weight]
+        concrete_weight = [0.5, 0.5] # format: [text weight, visual weight]
         abstract_weight = [0.8, 0.2] # more weight to text for abstract concepts
         score_multipliers = lerp(concrete_weight, abstract_weight, abstractness) # adds up to 1.0
         print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
+        
+        # Save raw scores for display
+        raw_text_score = score
+        raw_visual_score = score_visual
+        
         score = score * score_multipliers[0]
         score_visual = score_visual * score_multipliers[1]
         print(f"Text impact: {(score/1):.3f}%, Visual impact: {(score_visual/1):.3f}%")
@@ -91,17 +91,48 @@ def genericRunner():
             
         print(f"Combined Score: {score:.3f}")
 
+        # Keep a copy of the raw "relevance" score for the graph
+        display_score = score
+        interaction_score = score
 
+        # --- REVERSE BIAS LOGIC ---
+        if reverse_bias_mode:
+            print(f"Reverse Mode: Inverting score {score:.3f} -> {1.0-score:.3f}")
+            interaction_score = 1.0 - score
         
         # -- DECISION MAKING ----
         # run relevant decision function
         if run_full_model:
-            interactFullModel(i, score)
+            interactFullModel(i, interaction_score)
         else:
-            interactAsTest(i, score)
+            interactAsTest(i, interaction_score)
             
         # pause to allow time to scroll/load
         time.sleep(2)
+        
+        # ----- GRAPH UPDATE -----
+        # Always plot the "Relevance" (display_score), not the inverted interaction score
+        # This way, if cars disappear, the line goes DOWN.
+        liked_this_round = interaction_score > 0.3 # Re-calculate 'liked' based on what we actually did
+        updateGraph(i, display_score, liked_this_round)
+
+        # --- UPDATE UI OVERLAY ---
+        graph_img = get_graph_base64(fig)
+        status = "Analyzing..."
+        if liked_this_round:
+            status = "✨ Engaging (Biasing)" if not reverse_bias_mode else "⚠️ Breaking Bias"
+        else:
+            status = "❌ Ignoring"
+            
+        webdriver.update_overlay(
+            target_word=c.word,
+            text_score=raw_text_score,
+            visual_score=raw_visual_score,
+            combined_score=display_score,
+            status_text=status,
+            graph_base64=graph_img,
+            is_reverse_mode=reverse_bias_mode
+        )
         
 def lerp(start_dist, end_dist, t):
     """
@@ -122,18 +153,16 @@ def interactAsTest(i, score):
     else:
         print("Ignoring Video")
         
-    # ----- GRAPH UPDATE -----
-    updateGraph(i, score, liked)
-    
+
     webdriver.scroll()
     
 def interactFullModel(i, score):
     # -- DECISION MAKING ----
-    threshold = 0.2
-    steepness = 1.2
+    threshold = 0.3
+    steepness = 1.5
     max_watchtime = 30.0
-    like_threshold = 0.6
-    save_threshold = 0.8
+    like_threshold = 0.75
+    save_threshold = 0.9
     
     liked = score > threshold
     if liked:
@@ -154,9 +183,7 @@ def interactFullModel(i, score):
     else:
         print("Ignoring Video")
         
-    # ----- GRAPH UPDATE -----
-    updateGraph(i, score, liked)
-    
+
     webdriver.scroll()
     
 def value_to_watchtime(bias_value: float, threshold: float, steepness: float, max_waittime: float) -> float:
@@ -226,6 +253,7 @@ def updateGraph(i, score, liked):
 s = scraper.Scraper()
 c = Relatedness(input("Enter concept word: "))
 abstractness = float(input("how abstract is this concept? (0.0 = very concrete, 1.0 = very abstract): "))
+reverse_bias_mode = input("Enable Reverse Bias (break bias)? (y/n): ").lower().strip() == 'y'
 
 # Matplotlib stuff
 plt.ion()
@@ -256,6 +284,14 @@ webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 # open webdriver
 webdriver.openTiktok()
 webdriver.promptLogin()
+time.sleep(1)
+webdriver.inject_overlay()
 
+def get_graph_base64(fig):
+    """Converts the matplotlib figure to a base64 string for embedding in HTML"""
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='#222')
+    buf.seek(0)
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 genericRunner()

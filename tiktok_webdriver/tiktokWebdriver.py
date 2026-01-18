@@ -255,3 +255,223 @@ class TikTokWebdriverInstance: # _ indicates internal use
         except Exception as e:
             print(f"Failed to get description: {e}")
             return ""
+
+    def inject_overlay(self):
+        """
+        Injects the HUD overlay HTML/CSS into the page.
+        """
+        js_code = """
+        if (!document.getElementById('ai-hud')) {
+            const hud = document.createElement('div');
+            hud.id = 'ai-hud';
+            hud.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 350px;
+                background: rgba(0, 0, 0, 0.85);
+                color: #fff;
+                padding: 15px;
+                border-radius: 12px;
+                font-family: 'Proxima Nova', sans-serif;
+                z-index: 10000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
+            `;
+           
+            hud.innerHTML = `
+                <h3 style="margin: 0 0 10px 0; color: #fe2c55; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                    🤖 AI Bias Monitor
+                </h3>
+               
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #aaa;">Target:</span>
+                    <span id="hud-target" style="font-weight: bold;">Loading...</span>
+                </div>
+
+
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Text Relevance:</span>
+                        <span id="hud-text-score" style="color: #00f2ea;">0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Visual Relevance:</span>
+                        <span id="hud-visual-score" style="color: #00f2ea;">0.00</span>
+                    </div>
+                    <div style="height: 1px; background: #444; margin: 5px 0;"></div>
+                     <div style="display: flex; justify-content: space-between;">
+                        <span>Combined Score:</span>
+                        <span id="hud-combined-score" style="font-weight: bold; color: #fff;">0.00</span>
+                    </div>
+                </div>
+
+
+                <div style="margin-bottom: 10px; font-size: 14px;">
+                    <span id="hud-status" style="display: block; text-align: center; padding: 5px; background: #333; border-radius: 4px;">Initialize...</span>
+                </div>
+
+
+                <div style="text-align: center;">
+                    <img id="hud-graph" style="width: 100%; border-radius: 4px; border: 1px solid #444;" src="" />
+                </div>
+            `;
+           
+            document.body.appendChild(hud);
+        }
+        """
+        try:
+            self.driver.execute_script(js_code)
+            print("HUD Overlay injected.")
+        except Exception as e:
+            print(f"Failed to inject HUD: {e}")
+
+
+    def update_overlay(self, target_word, text_score, visual_score, combined_score, status_text, graph_base64, is_reverse_mode=False):
+        """
+        Updates the values in the HUD overlay.
+        """
+        # Escape single quotes in status text just in case
+        status_text = status_text.replace("'", "\\'")
+       
+        mode_color = "#ff0050" if is_reverse_mode else "#00f2ea"
+       
+        js_code = f"""
+        const target = document.getElementById('hud-target');
+        const textScore = document.getElementById('hud-text-score');
+        const visScore = document.getElementById('hud-visual-score');
+        const combScore = document.getElementById('hud-combined-score');
+        const status = document.getElementById('hud-status');
+        const graph = document.getElementById('hud-graph');
+       
+        if (target) {{
+            target.innerText = '{target_word}';
+            target.style.color = '{mode_color}';
+           
+            textScore.innerText = '{text_score:.3f}';
+            visScore.innerText = '{visual_score:.3f}';
+            combScore.innerText = '{combined_score:.3f}';
+           
+            status.innerText = '{status_text}';
+           
+            // Highlight high scores
+            combScore.style.color = {combined_score} > 0.3 ? '#00f2ea' : '#fff';
+           
+            if ('{graph_base64}') {{
+                graph.src = 'data:image/png;base64,{graph_base64}';
+            }}
+        }}
+        """
+        try:
+            self.driver.execute_script(js_code)
+        except Exception as e:
+            print(f"Failed to update HUD: {e}")
+
+    def inject_overlay(self):
+        """
+        Injects the HUD overlay HTML/CSS into the page.
+        """
+        js_code = """
+        if (!document.getElementById('ai-hud')) {
+            const hud = document.createElement('div');
+            hud.id = 'ai-hud';
+            hud.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 350px;
+                background: rgba(0, 0, 0, 0.85);
+                color: #fff;
+                padding: 15px;
+                border-radius: 12px;
+                font-family: 'Proxima Nova', sans-serif;
+                z-index: 10000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
+            `;
+            
+            hud.innerHTML = `
+                <h3 style="margin: 0 0 10px 0; color: #fe2c55; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                    🤖 AI Bias Monitor
+                </h3>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #aaa;">Target:</span>
+                    <span id="hud-target" style="font-weight: bold;">Loading...</span>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Text Relevance:</span>
+                        <span id="hud-text-score" style="color: #00f2ea;">0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Visual Relevance:</span>
+                        <span id="hud-visual-score" style="color: #00f2ea;">0.00</span>
+                    </div>
+                    <div style="height: 1px; background: #444; margin: 5px 0;"></div>
+                     <div style="display: flex; justify-content: space-between;">
+                        <span>Combined Score:</span>
+                        <span id="hud-combined-score" style="font-weight: bold; color: #fff;">0.00</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px; font-size: 14px;">
+                    <span id="hud-status" style="display: block; text-align: center; padding: 5px; background: #333; border-radius: 4px;">Initialize...</span>
+                </div>
+
+                <div style="text-align: center;">
+                    <img id="hud-graph" style="width: 100%; border-radius: 4px; border: 1px solid #444;" src="" />
+                </div>
+            `;
+            
+            document.body.appendChild(hud);
+        }
+        """
+        try:
+            self.driver.execute_script(js_code)
+            print("HUD Overlay injected.")
+        except Exception as e:
+            print(f"Failed to inject HUD: {e}")
+
+    def update_overlay(self, target_word, text_score, visual_score, combined_score, status_text, graph_base64, is_reverse_mode=False):
+        """
+        Updates the values in the HUD overlay.
+        """
+        # Escape single quotes in status text just in case
+        status_text = status_text.replace("'", "\\'")
+        
+        mode_color = "#ff0050" if is_reverse_mode else "#00f2ea" 
+        
+        js_code = f"""
+        const target = document.getElementById('hud-target');
+        const textScore = document.getElementById('hud-text-score');
+        const visScore = document.getElementById('hud-visual-score');
+        const combScore = document.getElementById('hud-combined-score');
+        const status = document.getElementById('hud-status');
+        const graph = document.getElementById('hud-graph');
+        
+        if (target) {{
+            target.innerText = '{target_word}';
+            target.style.color = '{mode_color}';
+            
+            textScore.innerText = '{text_score:.3f}';
+            visScore.innerText = '{visual_score:.3f}';
+            combScore.innerText = '{combined_score:.3f}';
+            
+            status.innerText = '{status_text}';
+            
+            // Highlight high scores
+            combScore.style.color = {combined_score} > 0.3 ? '#00f2ea' : '#fff';
+            
+            if ('{graph_base64}') {{
+                graph.src = 'data:image/png;base64,{graph_base64}';
+            }}
+        }}
+        """
+        try:
+            self.driver.execute_script(js_code)
+        except Exception as e:
+            print(f"Failed to update HUD: {e}")
