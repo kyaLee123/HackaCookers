@@ -8,23 +8,6 @@ import fasttext
 import nltk
 from nltk.corpus import stopwords
 
-# ----------------------------
-# Optional: Numberbatch fetch (kept exactly as in your script)
-# ----------------------------
-NB_GZ = "numberbatch-en-19.08.txt.gz"
-NB_TXT = "numberbatch-en-19.08.txt"
-NB_URL = "https://conceptnet.s3.amazonaws.com/downloads/2019/numberbatch/numberbatch-en-19.08.txt.gz"
-
-if not os.path.exists(NB_GZ) and not os.path.exists(NB_TXT):
-    print("Downloading Numberbatch...", flush=True)
-    urllib.request.urlretrieve(NB_URL, NB_GZ)
-    print("Downloaded:", NB_GZ, flush=True)
-
-if os.path.exists(NB_GZ) and not os.path.exists(NB_TXT):
-    print("Extracting Numberbatch...", flush=True)
-    with gzip.open(NB_GZ, "rb") as f_in, open(NB_TXT, "wb") as f_out:
-        shutil.copyfileobj(f_in, f_out)
-    print("Extracted:", NB_TXT, flush=True)
 
 
 # ----------------------------
@@ -42,7 +25,7 @@ class Relatedness:
     """
 
     # Path to your fastText model
-    MODEL_PATH = r"C:\Users\kyabr\PersonalProjects\HackaCookers\models\cc.en.300.bin"
+    MODEL_PATH = r"models\cc.en.300.bin"
 
     # fastText model + stopwords (loaded once)
     model = None
