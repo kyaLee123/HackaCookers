@@ -64,16 +64,22 @@ def genericRunner():
         print(f"score: {score}")
 
         # --- COMBINE SCORES ---
-        # Formula: (Text Score + Visual Score) / 2
-        # If one is 0, it drags the other down, which is good for safety? 
-        # Or should we only average non-zeroes? 
-        # User agreed to simple average.
+        # Formula: ((Text Score * abstractness weight) + (Visual Score * abstractness weight))
+        concrete_weight = [0.5, 0.5] # format: [text weight, visual weight]
+        abstract_weight = [0.8, 0.2] # more weight to text for abstract concepts
+        score_multipliers = lerp(concrete_weight, abstract_weight, abstractness) # adds up to 1.0
         print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
-        score = (score + score_visual) / 2
+        score = score * score_multipliers[0]
+        score_visual = score_visual * score_multipliers[1]
+        print(f"Text impact: {(score/1):.3f}%, Visual impact: {(score_visual/1):.3f}%")
+        score = (score + score_visual)
         
         # Override: If visual score is very high, trust it regardless of text
-        if score_visual >= 0.8:
-            print("Visual Score >= 0.8! Overriding to ensure watch.")
+        concrete_threshold = [0.8]
+        abstract_threshold = [0.97]
+        score_visual_threshold = lerp(concrete_threshold, abstract_threshold, abstractness)
+        if score_visual >= score_visual_threshold[0]:
+            print(f"Visual Score >= {score_visual_threshold[0]}! Overriding to ensure watch.")
             score = max(score, score_visual)
             
         print(f"Combined Score: {score:.3f}")
@@ -89,6 +95,13 @@ def genericRunner():
             
         # pause to allow time to scroll/load
         time.sleep(2)
+        
+def lerp(start_dist, end_dist, t):
+    """
+    Linear Interpolation between two distributions.
+    t: value between 0 and 1
+    """
+    return [s + (e - s) * t for s, e in zip(start_dist, end_dist)]
 
 def interactAsTest(i, score):
     # -- DECISION MAKING ----
@@ -205,6 +218,7 @@ def updateGraph(i, score, liked):
 # Initialize scraper and concept
 s = scraper.Scraper()
 c = Relatedness(input("Enter concept word: "))
+abstractness = float(input("how abstract is this concept? (0.0 = very concrete, 1.0 = very abstract): "))
 
 # Matplotlib stuff
 plt.ion()

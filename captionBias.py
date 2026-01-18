@@ -94,8 +94,6 @@ class Relatedness:
             return 0.0
         return float(np.dot(a, b) / denom)
 
-    # --- Public scoring API (your original algorithm) ---
-
     def score(
         self,
         caption: str,
