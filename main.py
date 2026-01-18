@@ -16,9 +16,49 @@ from clip_classifier import ClipClassifier
 run_full_model = True
 
 def genericRunner():
+    global c, abstractness, reverse_bias_mode
+
+
     # Initialize CLIP Classifier
+
+
+    # --- WAIT FOR TARGET + GO (from HUD) ---
+    print("Waiting for you to type a Target in the HUD and press GO...")
+
+    while True:
+        hud_state = webdriver.driver.execute_script("""
+            return {
+                go: window.__HUD_GO_PRESSED__ === true,
+                val: window.__HUD_TARGET__,
+                absVal: window.__HUD_ABSTRACT__,
+                mode: window.__HUD_MODE__
+            };
+        """)
+
+        if hud_state and hud_state.get("go") and hud_state.get("val") and hud_state.get("absVal") is not None:
+            try:
+                abs_val = float(hud_state["absVal"])
+            except (TypeError, ValueError):
+                abs_val = None
+
+            mode = (hud_state.get("mode") or "").strip().lower()
+
+            if abs_val is not None and 0.0 <= abs_val <= 1.0 and mode in ("enhance", "reduce"):
+                target_word = str(hud_state["val"]).strip()
+                abstractness = abs_val
+                reverse_bias_mode = (mode == "reduce")   # reduce = break bias (invert)
+                break
+
+
+
+
+    # Now that GO is pressed, set concept + other settings
+    c = Relatedness(target_word)
     print("Initializing CLIP Classifier...")
     classifier = ClipClassifier()
+
+
+
     
     i = 0
     while True:
@@ -251,9 +291,7 @@ def updateGraph(i, score, liked):
 
 # Initialize scraper and concept
 s = scraper.Scraper()
-c = Relatedness(input("Enter concept word: "))
-abstractness = float(input("how abstract is this concept? (0.0 = very concrete, 1.0 = very abstract): "))
-reverse_bias_mode = input("Enable Reverse Bias (break bias)? (y/n): ").lower().strip() == 'y'
+
 
 # Matplotlib stuff
 plt.ion()
@@ -285,7 +323,11 @@ webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 webdriver.openTiktok()
 webdriver.promptLogin()
 time.sleep(1)
+
+
+webdriver.driver.execute_script("return document.readyState")
 webdriver.inject_overlay()
+
 
 def get_graph_base64(fig):
     """Converts the matplotlib figure to a base64 string for embedding in HTML"""
