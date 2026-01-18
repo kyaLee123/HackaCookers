@@ -129,11 +129,12 @@ def genericRunner():
         score = (score + score_visual)
         
         # Override: If visual score is very high, trust it regardless of text
-        threshold = 0.9
-        #score_visual_threshold = lerp(concrete_threshold, abstract_threshold, abstractness)
-        if score_visual >= threshold:
-            print(f"Visual Score >= {threshold}! Overriding to ensure watch.")
-            score = max(score, score_visual)
+        concrete_threshold = [0.8]
+        abstract_threshold = [0.95]
+        score_visual_threshold = lerp(concrete_threshold, abstract_threshold, abstractness)[0] * score_multipliers[1]
+        if score_visual >= score_visual_threshold:
+            print(f"Visual Score >= {score_visual_threshold}! Overriding to ensure watch.")
+            score = 1.0
             
         print(f"Combined Score: {score:.3f}")
 
@@ -204,7 +205,7 @@ def interactAsTest(i, score):
     
 def interactFullModel(i, score):
     # -- DECISION MAKING ----
-    threshold = 0.3
+    threshold = 0.45
     steepness = 1.5
     max_watchtime = 20.0
     like_threshold = 0.7
