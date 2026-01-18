@@ -94,3 +94,75 @@ class Scraper:
         safe_print("Description", self.description)
         safe_print("Channel", self.channel)
         safe_print("Transcript", self.transcript)
+
+import re
+
+import re
+from nltk.corpus import stopwords
+import nltk
+
+# load stopwords once (module-level cache)
+try:
+    STOPWORDS = set(stopwords.words("english"))
+except LookupError:
+    nltk.download("stopwords")
+    STOPWORDS = set(stopwords.words("english"))
+
+
+def saveInfo(self, dedupe=True, append=False):
+    """
+    Save comma-separated, stopword-free words from title/description/channel
+    into scraped_info.txt
+    """
+
+    # 1) Combine all text fields safely
+    combined_text = " ".join([
+        self.title or "",
+        self.description or "",
+        self.channel or ""
+    ])
+
+    # 2) Normalize + tokenize
+    words = re.findall(r"[a-zA-Z']+", combined_text.lower())
+
+    # 3) Remove stopwords
+    words = [w for w in words if w not in STOPWORDS]
+
+    # 4) Optional deduplication (preserve order)
+    if dedupe:
+        seen = set()
+        words = [w for w in words if not (w in seen or seen.add(w))]
+
+    # 5) Write comma-separated
+    mode = "a" if append else "w"
+    with open("scraped_info.txt", mode, encoding="utf-8") as f:
+        f.write(",".join(words))
+        if append:
+            f.write("\n")
+def saveInfo(self, dedupe=True):
+    """
+    Append comma-separated, stopword-free words from
+    title/description/channel to scraped_info.txt
+    """
+
+    # 1) Combine all text fields safely
+    combined_text = " ".join([
+        self.title or "",
+        self.description or "",
+        self.channel or ""
+    ])
+
+    # 2) Normalize + tokenize
+    words = re.findall(r"[a-zA-Z']+", combined_text.lower())
+
+    # 3) Remove stopwords
+    words = [w for w in words if w not in STOPWORDS]
+
+    # 4) Optional deduplication (preserve order per call)
+    if dedupe:
+        seen = set()
+        words = [w for w in words if not (w in seen or seen.add(w))]
+
+    # 5) ALWAYS append (one line per call)
+    with open("scraped_info.txt", "a", encoding="utf-8") as f:
+        f.write(",".join(words) + "\n")
