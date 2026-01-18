@@ -1,43 +1,44 @@
 from PIL import Image
 import numpy as np
-import easyocr
+
+from paddleocr import PaddleOCR
 
 
-class EmojiOCR:
-    def __init__(self, gpu=False, output_file="imageText.txt"):
+class PaddleTextOCR:
+    def __init__(self, output_file="imageText.txt"):
         self.output_file = output_file
-        print(f"Loading EasyOCR reader (gpu={gpu})...")
-        self.reader = easyocr.Reader(['en'], gpu=gpu)
+        print("Loading PaddleOCR (CPU)...")
+        # use_angle_cls helps sometimes with rotated text, but can slow down
+        self.ocr = PaddleOCR(use_angle_cls=False, lang="en", show_log=False)
 
     def classify(self, image_path):
         try:
-            img = Image.open(image_path)  # open image
-            width, height = img.size      # get size
+            img = Image.open(image_path).convert("RGB")
+            np_img = np.array(img)
 
-            bottom = int(height * 4 / 5)  # compute bottom section we want to remove
-            cropped = img.crop((0, 0, width, bottom))  # remove bottom
+            result = self.ocr.ocr(np_img, cls=False)
 
-            cropped.save("debug_easyocr_crop.png")  # save it so i can view
-            np_img = np.array(cropped)              # convert to np array
-            results = self.reader.readtext(np_img, detail=0)  # read results
+            # result format: [ [ [box], (text, conf) ], ... ]
+            parts = []
+            for line in result[0] if result else []:
+                parts.append(line[1][0])
 
-            text = " ".join(results).strip()
+            text = " ".join(parts).strip()
 
-            #save text
             with open(self.output_file, "a", encoding="utf-8") as f:
                 f.write(text + "\n")
+
             return text
-        
+
         except Exception as e:
-            print(f"Error extracting text with EmojiOCR: {e}")
+            print(f"Error extracting text with PaddleTextOCR: {e}")
             return None
 
 
 if __name__ == "__main__":
-    print("EmojiOCR module ready.")
+    print("PaddleTextOCR module ready.")
 
-    test_image = r"C:\Users\kyabr\PersonalProjects\HackaCookers\data\image.png"
-    ocr = EmojiOCR(gpu=False)
+    test_image = r"C:\Users\kyabr\PersonalProjects\HackaCookers\data\image3.png"
+    ocr = PaddleTextOCR(output_file="imageText.txt")
     text = ocr.classify(test_image)
     print(text)
-
