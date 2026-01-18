@@ -34,6 +34,11 @@ class Relatedness:
     """
     Class representing a target word/idea, used to score how strongly
     a caption is related to it in the range [0, 1].
+
+    Concept-compatible usage:
+        from captionBias import Concept
+        c = Concept("dance")
+        score = c.biasScore("some caption")  # float in [0,1]
     """
 
     # Path to your fastText model
@@ -95,7 +100,7 @@ class Relatedness:
             return 0.0
         return float(np.dot(a, b) / denom)
 
-    # --- Public scoring API (mirrors biasScore-style) ---
+    # --- Public scoring API (your original algorithm) ---
 
     def score(
         self,
@@ -126,4 +131,24 @@ class Relatedness:
         score = base + bonus * max(0, count - 1)
         return float(min(1.0, score))
 
+    # ----------------------------
+    # Concept-compatible call surface (NO algorithm change)
+    # ----------------------------
+    def biasScore(self, text: str, **kwargs) -> float:
+        """
+        Alias for .score() so you can call it like your old Concept class.
+        Returns float in [0,1].
+        """
+        return self.score(text, **kwargs)
 
+    def __call__(self, text: str, **kwargs) -> float:
+        """
+        Optional: allow instance(text) as shorthand for score(text).
+        """
+        return self.score(text, **kwargs)
+
+
+# ----------------------------
+# Drop-in alias: lets you do `c = Concept("dance")` exactly like before
+# ----------------------------
+Concept = Relatedness
