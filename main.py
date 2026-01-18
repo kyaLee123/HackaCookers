@@ -27,21 +27,6 @@ def genericRunner():
         
 
 
-        print("getting url...")
-        
-        # get url and scrape
-        try:
-            url = webdriver.getUrl()
-            s.getInfo(url, False)
-            print(f"Succeed! {url}")
-        except Exception:
-            print("Fail!")
-            s.description = "bob"
-        
-        # --- BIAS SCORING ----
-        score = c.biasScore(s.description)
-        print(f"score: {score}")
-
         # --- VISUAL CLASSIFICATION ---
         # 1. Capture Screenshot
         screenshot_path = "temp_screenshot.jpg"
@@ -62,6 +47,21 @@ def genericRunner():
         else:
             print("Screenshot failed, skipping visual classification.")
             score_visual = 0.0
+
+        print("getting url...")
+        
+        # get url and scrape
+        try:
+            url = webdriver.getUrl()
+            s.getInfo(url, False)
+            print(f"Succeed! {url}")
+        except Exception:
+            print("Fail!")
+            s.description = "bob"
+        
+        # --- BIAS SCORING ----
+        score = c.biasScore(s.description)
+        print(f"score: {score}")
 
         # --- COMBINE SCORES ---
         # Formula: (Text Score + Visual Score) / 2
