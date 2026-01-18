@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import statistics
 import csv
 import math
+import io
+import base64
 
 from helper import scraper
 from captionBias import Relatedness
@@ -69,6 +71,11 @@ def genericRunner():
         abstract_weight = [0.8, 0.2] # more weight to text for abstract concepts
         score_multipliers = lerp(concrete_weight, abstract_weight, abstractness) # adds up to 1.0
         print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
+        
+        # Save raw scores for display
+        raw_text_score = score
+        raw_visual_score = score_visual
+        
         score = score * score_multipliers[0]
         score_visual = score_visual * score_multipliers[1]
         print(f"Text impact: {(score/1):.3f}%, Visual impact: {(score_visual/1):.3f}%")
@@ -108,6 +115,24 @@ def genericRunner():
         # This way, if cars disappear, the line goes DOWN.
         liked_this_round = interaction_score > 0.3 # Re-calculate 'liked' based on what we actually did
         updateGraph(i, display_score, liked_this_round)
+
+        # --- UPDATE UI OVERLAY ---
+        graph_img = get_graph_base64(fig)
+        status = "Analyzing..."
+        if liked_this_round:
+            status = "✨ Engaging (Biasing)" if not reverse_bias_mode else "⚠️ Breaking Bias"
+        else:
+            status = "❌ Ignoring"
+            
+        webdriver.update_overlay(
+            target_word=c.word,
+            text_score=raw_text_score,
+            visual_score=raw_visual_score,
+            combined_score=display_score,
+            status_text=status,
+            graph_base64=graph_img,
+            is_reverse_mode=reverse_bias_mode
+        )
         
 def lerp(start_dist, end_dist, t):
     """
@@ -259,6 +284,14 @@ webdriver = tiktokWebdriver.TikTokWebdriverInstance()
 # open webdriver
 webdriver.openTiktok()
 webdriver.promptLogin()
+time.sleep(1)
+webdriver.inject_overlay()
 
+def get_graph_base64(fig):
+    """Converts the matplotlib figure to a base64 string for embedding in HTML"""
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', transparent=False, facecolor='#222')
+    buf.seek(0)
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 genericRunner()
