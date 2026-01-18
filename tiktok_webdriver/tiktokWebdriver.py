@@ -11,7 +11,8 @@ class TikTokWebdriverInstance: # _ indicates internal use
     def __init__(self):
         # Prepare driver options
         chrome_options = Options()
-        chrome_options.add_experimental_option("detach", True)
+        chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 
         # Initialize the driver
         self.driver = webdriver.Chrome(options=chrome_options)

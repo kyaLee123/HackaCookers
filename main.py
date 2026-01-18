@@ -194,7 +194,7 @@ ax.legend()
 
 WINDOW = 15   # how many recent videos to smooth over
 
-median_line, = ax.plot([], [], linestyle="--", label="Rolling Median")
+median_line, = ax.plot([], [], label="Rolling Median", color="red")
 ax.legend()
 
 SAVE_EVERY = 10 # How many videos to pass to save the data
