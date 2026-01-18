@@ -1,7 +1,6 @@
-import biasFunctions.captionBias as captionBias
-import biasFunctions.imageClassificationBias as imageBias
+import captionBias 
 
-c = imageBias.Concept("animal")
+c = captionBias.Concept("animal")
 
 
 tests  = [
