@@ -50,14 +50,21 @@ def genericRunner():
 
         print("getting url...")
         
-        # get url and scrape
-        try:
-            url = webdriver.getUrl()
-            s.getInfo(url, False)
-            print(f"Succeed! {url}")
-        except Exception:
-            print("Fail!")
-            s.description = "bob"
+        while True:
+            # get url and scrape
+            try:
+                url = webdriver.getUrl()
+                print(f"Succeed! {url}")
+                try:
+                    s.getInfo(url, False)
+                    break
+                except Exception:
+                    print("❌URL scraping error❌")
+                    webdriver.scroll()
+                    time.sleep(2)
+            except Exception:
+                print("❌Fail❌")
+                input("URL grab failed, pause the video then press Enter to try again...")
         
         # --- BIAS SCORING ----
         score = c.biasScore(s.description)
@@ -65,7 +72,7 @@ def genericRunner():
 
         # --- COMBINE SCORES ---
         # Formula: ((Text Score * abstractness weight) + (Visual Score * abstractness weight))
-        concrete_weight = [0.5, 0.5] # format: [text weight, visual weight]
+        concrete_weight = [0.4, 0.6] # format: [text weight, visual weight]
         abstract_weight = [0.8, 0.2] # more weight to text for abstract concepts
         score_multipliers = lerp(concrete_weight, abstract_weight, abstractness) # adds up to 1.0
         print(f"Text Score: {score:.3f}, Visual Score: {score_visual:.3f}")
@@ -122,11 +129,11 @@ def interactAsTest(i, score):
     
 def interactFullModel(i, score):
     # -- DECISION MAKING ----
-    threshold = 0.3
-    steepness = 1.5
+    threshold = 0.2
+    steepness = 1.2
     max_watchtime = 30.0
-    like_threshold = 0.75
-    save_threshold = 0.9
+    like_threshold = 0.6
+    save_threshold = 0.8
     
     liked = score > threshold
     if liked:
