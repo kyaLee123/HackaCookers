@@ -34,7 +34,7 @@ class Relatedness:
     """
 
     # Path to your fastText model
-    MODEL_PATH = r'"C:\Users\grube\Desktop\HackaCookers\cc.en.300.bin"'
+    MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cc.en.300.bin')
 
     # fastText model + stopwords (loaded once)
     model = None
@@ -68,6 +68,8 @@ class Relatedness:
     # --- Your helpers (same functionality) ---
 
     def _tokenize(self, text: str) -> list[str]:
+        if not text:
+            return []
         text = text.lower()
         text = re.sub(r"#", " ", text)
         text = re.sub(r"[^a-z\s]", " ", text)
