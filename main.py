@@ -11,7 +11,7 @@ from clip_classifier import ClipClassifier
 
 # Set to True to run the full interaction model (likes, saves)
 # Set to False if you want to test w/o logging in
-run_full_model = False
+run_full_model = True
 
 def genericRunner():
     # Initialize CLIP Classifier
@@ -92,9 +92,42 @@ def genericRunner():
 
 def interactAsTest(i, score):
     # -- DECISION MAKING ----
-    liked = score > 0.5
+    threshold = 0.3
+    liked = score > threshold
     if liked:
-        watch_time_value = value_to_watchtime(score, 0.3, 1.5, 30.0)
+        watch_time_value = value_to_watchtime(score, threshold, 1.5, 30.0)
+        print(f"Watching for {watch_time_value} seconds...")
+        time.sleep(watch_time_value)
+        i += 1
+    else:
+        print("Ignoring Video")
+        
+    # ----- GRAPH UPDATE -----
+    updateGraph(i, score, liked)
+    
+    webdriver.scroll()
+    
+def interactFullModel(i, score):
+    # -- DECISION MAKING ----
+    threshold = 0.3
+    steepness = 1.5
+    max_watchtime = 30.0
+    like_threshold = 0.75
+    save_threshold = 0.9
+    
+    liked = score > threshold
+    if liked:
+        if score > save_threshold:
+            print("Saving Video")
+            webdriver.pressSaveButton()
+            time.sleep(1)  # brief pause for latency
+            
+        if score > like_threshold:
+            print("Liking Video")
+            webdriver.pressLikeButton()
+            time.sleep(1)  # brief pause for latency
+
+        watch_time_value = value_to_watchtime(score, threshold, steepness, max_watchtime)
         print(f"Watching for {watch_time_value} seconds...")
         time.sleep(watch_time_value)
         i += 1
@@ -140,9 +173,6 @@ def value_to_watchtime(bias_value: float, threshold: float, steepness: float, ma
     curve = (math.exp(steepness * t) - 1) / (math.exp(steepness) - 1)
 
     return curve * max_waittime
-
-def interactFullModel():
-    return 0
 
 def saveImg(fig, filename="bias_plot.png"):
     fig.savefig(filename, dpi=200, bbox_inches="tight")

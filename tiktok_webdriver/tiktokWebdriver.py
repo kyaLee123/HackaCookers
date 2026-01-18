@@ -13,6 +13,12 @@ class TikTokWebdriverInstance: # _ indicates internal use
         chrome_options = Options()
         chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        
+        print("open your chrome tab through the terminal with:")
+        print('(mac)\n/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222 --user-data-dir="/tmp/chrome-profile"')
+        print('(windows)\n"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\selenium\ChromeProfile"')
+        input("And then press Enter to continue...")
+
 
         # Initialize the driver
         self.driver = webdriver.Chrome(options=chrome_options)
