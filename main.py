@@ -84,17 +84,30 @@ def genericRunner():
             
         print(f"Combined Score: {score:.3f}")
 
+        # Keep a copy of the raw "relevance" score for the graph
+        display_score = score
+        interaction_score = score
 
+        # --- REVERSE BIAS LOGIC ---
+        if reverse_bias_mode:
+            print(f"Reverse Mode: Inverting score {score:.3f} -> {1.0-score:.3f}")
+            interaction_score = 1.0 - score
         
         # -- DECISION MAKING ----
         # run relevant decision function
         if run_full_model:
-            interactFullModel(i, score)
+            interactFullModel(i, interaction_score)
         else:
-            interactAsTest(i, score)
+            interactAsTest(i, interaction_score)
             
         # pause to allow time to scroll/load
         time.sleep(2)
+        
+        # ----- GRAPH UPDATE -----
+        # Always plot the "Relevance" (display_score), not the inverted interaction score
+        # This way, if cars disappear, the line goes DOWN.
+        liked_this_round = interaction_score > 0.3 # Re-calculate 'liked' based on what we actually did
+        updateGraph(i, display_score, liked_this_round)
         
 def lerp(start_dist, end_dist, t):
     """
@@ -115,9 +128,7 @@ def interactAsTest(i, score):
     else:
         print("Ignoring Video")
         
-    # ----- GRAPH UPDATE -----
-    updateGraph(i, score, liked)
-    
+
     webdriver.scroll()
     
 def interactFullModel(i, score):
@@ -147,9 +158,7 @@ def interactFullModel(i, score):
     else:
         print("Ignoring Video")
         
-    # ----- GRAPH UPDATE -----
-    updateGraph(i, score, liked)
-    
+
     webdriver.scroll()
     
 def value_to_watchtime(bias_value: float, threshold: float, steepness: float, max_waittime: float) -> float:
@@ -219,6 +228,7 @@ def updateGraph(i, score, liked):
 s = scraper.Scraper()
 c = Relatedness(input("Enter concept word: "))
 abstractness = float(input("how abstract is this concept? (0.0 = very concrete, 1.0 = very abstract): "))
+reverse_bias_mode = input("Enable Reverse Bias (break bias)? (y/n): ").lower().strip() == 'y'
 
 # Matplotlib stuff
 plt.ion()

@@ -34,8 +34,8 @@ class Relatedness:
     """
 
     # Path to your fastText model
-    MODEL_PATH = r'/Users/anderscurrah/Desktop/Random Coding Stuffs/Hackathons/HackaCookers/models/cc.en.300.bin'
-
+    # MODEL_PATH = r'/Users/anderscurrah/Desktop/Random Coding Stuffs/Hackathons/HackaCookers/models/cc.en.300.bin'
+    MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cc.en.300.bin')
     # fastText model + stopwords (loaded once)
     model = None
     STOPWORDS = None
