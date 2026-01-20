@@ -17,8 +17,7 @@ class Relatedness:
     """
 
     #model path
-    MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cc.en.300.bin')
-
+    MODEL_PATH = r'/Users/anderscurrah/Desktop/Random Coding Stuffs/Hackathons/HackaCookers/models/cc.en.300.bin'
     model = None
     STOPWORDS = None
 

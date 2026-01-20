@@ -11,10 +11,6 @@ from captionBias import Relatedness
 from tiktok_webdriver import tiktokWebdriver
 from clip_classifier import ClipClassifier
 
-# Set to True to run the full interaction model (likes, saves)
-# Set to False if you want to test w/o logging in
-run_full_model = True
-
 def genericRunner():
     global c, abstractness, reverse_bias_mode
 
@@ -134,7 +130,7 @@ def genericRunner():
         score_visual_threshold = lerp(concrete_threshold, abstract_threshold, abstractness)[0] * score_multipliers[1]
         if score_visual >= score_visual_threshold:
             print(f"Visual Score >= {score_visual_threshold}! Overriding to ensure watch.")
-            score = 1.0
+            score = score_visual / score_multipliers[1]  # reverse the multiplier to get full score
             
         print(f"Combined Score: {score:.3f}")
 
@@ -148,11 +144,7 @@ def genericRunner():
             interaction_score = 1.0 - score
         
         # -- DECISION MAKING ----
-        # run relevant decision function
-        if run_full_model:
-            interactFullModel(i, interaction_score)
-        else:
-            interactAsTest(i, interaction_score)
+        interactFullModel(i, interaction_score)
             
         # pause to allow time to scroll/load
         time.sleep(2)
@@ -187,29 +179,23 @@ def lerp(start_dist, end_dist, t):
     t: value between 0 and 1
     """
     return [s + (e - s) * t for s, e in zip(start_dist, end_dist)]
-
-def interactAsTest(i, score):
-    # -- DECISION MAKING ----
-    threshold = 0.3
-    liked = score > threshold
-    if liked:
-        watch_time_value = value_to_watchtime(score, threshold, 1.5, 30.0)
-        print(f"Watching for {watch_time_value} seconds...")
-        time.sleep(watch_time_value)
-        i += 1
-    else:
-        print("Ignoring Video")
-        
-
-    webdriver.scroll()
     
 def interactFullModel(i, score):
     # -- DECISION MAKING ----
-    threshold = 0.45
-    steepness = 1.5
-    max_watchtime = 20.0
-    like_threshold = 0.7
-    save_threshold = 0.9
+    concrete_threshold = 0.45
+    abstract_threshold = 0.2
+    concrete_steepness = 1.7
+    abstract_steepness = 1.2
+    max_watchtime = 25.0
+    concrete_like_threshold = 0.7
+    abstract_like_threshold = 0.5
+    concrete_save_threshold = 0.9
+    abstract_save_threshold = 0.75
+    
+    threshold = lerp([concrete_threshold], [abstract_threshold], abstractness)[0]
+    steepness = lerp([concrete_steepness], [abstract_steepness], abstractness)[0]
+    like_threshold = lerp([concrete_like_threshold], [abstract_like_threshold], abstractness)[0]
+    save_threshold = lerp([concrete_save_threshold], [abstract_save_threshold], abstractness)[0]
     
     liked = score > threshold
     if liked:
